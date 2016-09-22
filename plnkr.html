@@ -3,7 +3,8 @@
 <head>
     <title>Angular 2 Lessons</title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
 
     <script>
         var path = document.location.href.includes('plnkr')
@@ -13,73 +14,64 @@
     </script>
 
 
-    <link rel="stylesheet" href="styles.css">
-
+    <link rel="stylesheet"
+          href="styles.css">
     <script src="https://unpkg.com/core-js/client/shim.min.js"></script>
-
     <script src="https://unpkg.com/zone.js@0.6.23?main=browser"></script>
     <script src="https://unpkg.com/reflect-metadata@0.1.3"></script>
-    <script src="https://unpkg.com/systemjs@0.19.27/dist/system.src.js"></script>
+    <script src="https://unpkg.com/systemjs@0.19.38/dist/system.src.js"></script>
     <script>
-        (function (global) {
-            System.config({
-                // DEMO ONLY! REAL CODE SHOULD NOT TRANSPILE IN THE BROWSER
-                transpiler: 'ts',
-                typescriptOptions: {
-                    tsconfig: true
-                },
-                meta: {
-                    'typescript': {
-                        "exports": "ts"
-                    }
-                },
-                paths: {
-                    'npm:': 'https://unpkg.com/'
-                },
-                map: {
-                    app: 'src',
-                    '@angular/core': 'npm:@angular/core/bundles/core.umd.js',
-                    '@angular/common': 'npm:@angular/common/bundles/common.umd.js',
-                    '@angular/compiler': 'npm:@angular/compiler/bundles/compiler.umd.js',
-                    '@angular/platform-browser': 'npm:@angular/platform-browser/bundles/platform-browser.umd.js',
-                    '@angular/platform-browser-dynamic': 'npm:@angular/platform-browser-dynamic/bundles/platform-browser-dynamic.umd.js',
-                    '@angular/http': 'npm:@angular/http/bundles/http.umd.js',
-                    '@angular/router': 'npm:@angular/router/bundles/router.umd.js',
-                    '@angular/forms': 'npm:@angular/forms/bundles/forms.umd.js',
+        const app = {'app': 'src'};
+        const npm = 'https://unpkg.com';
+        const transpiler = 'ts';
+        const typescriptOptions = {tsconfig: true};
+        const meta = {'typescript': {"exports": "ts"}};
+        const packages = {
+            app: {
+                main: './main.browser.ts',
+                defaultExtension: 'ts'
+            },
+            rxjs: {
+                defaultExtension: 'js'
+            }
+        };
 
-                    '@angular/core/testing': 'npm:@angular/core/bundles/core-testing.umd.js',
-                    '@angular/common/testing': 'npm:@angular/common/bundles/common-testing.umd.js',
-                    '@angular/compiler/testing': 'npm:@angular/compiler/bundles/compiler-testing.umd.js',
-                    '@angular/platform-browser/testing': 'npm:@angular/platform-browser/bundles/platform-browser-testing.umd.js',
-                    '@angular/platform-browser-dynamic/testing': 'npm:@angular/platform-browser-dynamic/bundles/platform-browser-dynamic-testing.umd.js',
-                    '@angular/http/testing': 'npm:@angular/http/bundles/http-testing.umd.js',
-                    '@angular/router/testing': 'npm:@angular/router/bundles/router-testing.umd.js',
-                    '@angular/forms/testing': 'npm:@angular/forms/bundles/forms-testing.umd.js',
+        const browserCompiler = {
+            'ts': `${npm}/plugin-typescript@5.1.2/lib/plugin.js`,
+            'typescript': `${npm}/typescript@2.0.2/lib/typescript.js`,
+        };
 
-                    'rxjs':                       'npm:rxjs',
-                    'angular2-in-memory-web-api': 'npm:angular2-in-memory-web-api',
-                    'ts':                         'npm:plugin-typescript@4.0.10/lib/plugin.js',
-                    'typescript':                 'npm:typescript@2.0.2/lib/typescript.js',
+        const dependencies = fetch('./package.json')
+                .then(pkg => pkg.json())
+                .then(body => body.dependencies);
 
-                },
-                packages: {
-                    app: {
-                        main: './main.browser.ts',
-                        defaultExtension: 'ts'
-                    },
-                    rxjs: {
-                        defaultExtension: 'js'
-                    },
-                    'angular2-in-memory-web-api': {
-                        main: './index.js',
-                        defaultExtension: 'js'
-                    }
-                }
-            });
-        })(this);
-    </script>
-    <script>
-        System.import('app').catch(function(err){ console.error(err); });
+        dependencies.then(deps => {
+            const depInfo = Object.keys(deps)
+                    .map(key => ({pkg: key, org: key.split('/')[0], repo: key.split('/')[1], version: deps[key]}));
+
+            const ngInfo = depInfo.filter(info => info.org === '@angular')
+                    .reduce((acc, {pkg, org, repo, version}) => Object.assign(acc, {
+                        [`${pkg}`]: `${npm}/${pkg}@${version}/bundles/${repo}.umd.js`
+                    }), {});
+
+            const libInfo = depInfo.filter(info => info.org !== '@angular')
+                    .reduce((acc, {pkg, org, repo, version}) => Object.assign(acc, {
+                        [`${pkg}`]: `${npm}/${pkg}@${version}`
+                    }), {});
+
+               return {
+                transpiler,
+                typescriptOptions,
+                meta,
+                packages,
+                map: Object.assign(app, browserCompiler, libInfo, ngInfo)
+            };
+        })
+                .then(config => System.config(config))
+                .then(()=> System.import('app'))
+                .catch(function (err) {
+                    console.error(err);
+                });
     </script>
 </head>
 <body>
