@@ -17,7 +17,7 @@ var webpackConfig = {
     entry,
 
     output: {
-        path: './dist',
+        path: './',
     },
     plugins: [
         new webpack.optimize.OccurenceOrderPlugin(true),
